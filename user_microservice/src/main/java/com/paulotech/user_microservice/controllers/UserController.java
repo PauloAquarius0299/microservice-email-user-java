@@ -5,6 +5,7 @@ import com.paulotech.user_microservice.dtos.UserRecordDTO;
 import com.paulotech.user_microservice.models.UserModel;
 import com.paulotech.user_microservice.services.UserService;
 import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -27,26 +28,11 @@ public class UserController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<String> createUser(@Valid @RequestBody UserRecordDTO userDTO) {
-        try {
-            UserModel userModel = new UserModel();
-            userModel.setName(userDTO.name());
-            userModel.setEmail(userDTO.email());
-            userService.save(userModel);
-            return ResponseEntity.ok("Usuário cadastrado com sucesso.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<UserModel> saveUser(@Valid @RequestBody UserRecordDTO userRecordDTO) {
+        var userModel = new UserModel();
+        BeanUtils.copyProperties(userRecordDTO, userModel);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.save(userModel));
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
-    }
+
 }

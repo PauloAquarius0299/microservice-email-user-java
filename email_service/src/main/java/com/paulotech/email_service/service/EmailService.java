@@ -15,20 +15,22 @@ import java.time.LocalDateTime;
 @Service
 public class EmailService {
 
-    final EmailRepository emailRepository;
-    final JavaMailSender emailSender;
+     final EmailRepository emailRepository;
+     final JavaMailSender emailSender;
 
-    public EmailService(EmailRepository emailRepository, JavaMailSender emailSender){
+    // Constructor
+    public EmailService(EmailRepository emailRepository, JavaMailSender emailSender) {
         this.emailRepository = emailRepository;
         this.emailSender = emailSender;
     }
 
-    @Value(value = "${spring.mail.username}")
+    @Value(value ="${spring.mail.username}")
     private String emailForm;
 
     @Transactional
-    public EmailModel sendEmail(EmailModel emailModel){
-        try{
+    public EmailModel sendEmail(EmailModel emailModel) {
+        try {
+            // Configuração de envio
             emailModel.setSendDateEmail(LocalDateTime.now());
             emailModel.setEmailForm(emailForm);
 
@@ -36,12 +38,23 @@ public class EmailService {
             message.setTo(emailModel.getEmailTo());
             message.setSubject(emailModel.getSubject());
             message.setText(emailModel.getText());
+
+            // Enviar email
             emailSender.send(message);
 
+            // Atualizar status como enviado
             emailModel.setStatusEmail(StatusEmail.SENT);
+
         } catch (MailException e) {
+            // Atualizar status como erro
             emailModel.setStatusEmail(StatusEmail.ERROR);
+
+            // Logar a exceção
+            System.err.println("Error sending email: " + e.getMessage());
+            e.printStackTrace();
+
         } finally {
+            // Salvar o modelo independentemente do sucesso ou falha
             return emailRepository.save(emailModel);
         }
     }
